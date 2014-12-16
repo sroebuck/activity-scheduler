@@ -3,11 +3,11 @@ package com.proinnovate.activityscheduler
 /*
  * Copyright (c) Stuart Roebuck, 2014
  */
-case class ActivitySlot(name: String, slot: Slot, min: Int = 2, max: Int = 6) {
-  require(ActivitySlot.universalNameSet.contains(name))
+case class Activity(name: String, min: Int = 2, max: Int = 6) {
+  require(Activity.universalNameSet.contains(name))
 }
 
-object ActivitySlot {
+object Activity {
 
   val universalNameSet = Set("Archery","Trail Biking","Ropes","Tree Climb","High Ropes","Adventure Golf","Pitch & Putt","Orienteering","Games Hall","Football","Adventure Playground")
 

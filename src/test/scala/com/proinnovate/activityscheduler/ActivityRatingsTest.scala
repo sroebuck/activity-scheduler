@@ -14,7 +14,7 @@ class ActivityRatingsTest extends FunSuite with PropertyChecks {
   test("Can create some ratings") {
     forAll {
       (ratings: ActivityRatings) =>
-        assert(ratings.ratingsMap.size == ActivitySlot.universalNameSet.size)
+        assert(ratings.ratingsMap.size == Activity.universalNameSet.size)
     }
   }
 
@@ -28,7 +28,7 @@ object ActivityRatingsTest {
 
   implicit lazy val arbActivityRatings: Arbitrary[ActivityRatings] = Arbitrary {
     val ratings = for {
-      name <- ActivitySlot.universalNameSet
+      name <- Activity.universalNameSet
       rating <- arbActivityRating.arbitrary.sample
     } yield (name, rating)
     ActivityRatings(ratings.toMap)
