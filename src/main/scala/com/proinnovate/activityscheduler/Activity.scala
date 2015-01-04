@@ -5,6 +5,8 @@ package com.proinnovate.activityscheduler
  */
 case class Activity(name: String, min: Int = 2, max: Int = 6) {
   require(Activity.universalNameSet.contains(name))
+
+  override def toString = name
 }
 
 object Activity {

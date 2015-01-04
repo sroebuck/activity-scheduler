@@ -16,7 +16,8 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
   }
 
   test("An overall plan can be constructed and results in a reasonable overall fit") {
-    val plan = bestOfSelection(randomPlan, 1000)
+//    val plan = bestOfSelection(randomPlan, 1000)
+    val plan = randomBestOf(10,100)
     // Generate overall plan
     assert(plan.unusedActivityPlaces.size > 0)
     assert(plan.individualPlans.size > 0)
@@ -32,6 +33,24 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
       plan = plan.withRandomAllocatedActivity()
     }
     plan
+  }
+
+  def randomBestOf(tryingNo: Int, keepingNo: Int): OverallPlan = {
+    var plans = Seq.fill(keepingNo)(basePlan)
+    while(plans(0).notComplete) {
+      plans = bestNextRandomIteration(plans, tryingNo, keepingNo)
+    }
+    plans.sortBy(- _.fit._1).take(1).head
+  }
+
+  def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
+    val nextPlans = for {
+      plan <- plans
+      nextSteps <- 1 to tryingNo
+    } yield plan.withRandomAllocatedActivity()
+    val results = nextPlans.sortBy(- _.fit._1).take(keepingNo)
+    // logger.debug(s"Iteration fit: ${results.head.fit}")
+    results
   }
 
   def bestOfSelection(f: () => OverallPlan, sampleSize: Int): OverallPlan = {
