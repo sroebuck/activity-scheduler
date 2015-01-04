@@ -8,7 +8,7 @@ package com.proinnovate.activityscheduler
  */
 case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualPlans: Set[IndividualPlan]) {
 
-  lazy val fit: Double = {
+  lazy val fit: (Double,Double,Double) = {
     val (minOut: Double, maxOut: Double, sumOut: Double) =
       individualPlans.foldLeft((Double.MaxValue, Double.MinValue, 0.0)) {
       case ((minIn: Double, maxIn: Double, sumIn: Double), plan) =>
@@ -19,7 +19,7 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     }
     // Use the score of the minimum score for any one individual as the measure of the overall plan score.
     // In other words, focus on making sure that no one person misses out.
-    minOut
+    (minOut, sumOut / individualPlans.size, maxOut)
   }
 
   lazy val notComplete = {

@@ -16,13 +16,13 @@ object ActivityPlaceTest {
     val slot1Places = slot1ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
 
     val slot2ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
-    val slot2Places = slot2ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
+    val slot2Places = slot2ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot2))
 
     val slot3ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
-    val slot3Places = slot3ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
+    val slot3Places = slot3ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot3))
 
     val slot4ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,Adventure Golf,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
-    val slot4Places = slot4ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
+    val slot4Places = slot4ActivityNames.map(name => ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot4))
 
     (slot1Places ++ slot2Places ++ slot3Places ++ slot4Places).toSet
   }

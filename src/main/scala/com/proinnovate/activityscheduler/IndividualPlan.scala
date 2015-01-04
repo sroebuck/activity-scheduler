@@ -16,7 +16,7 @@ case class IndividualPlan(individual: Individual, activityPlaces: Set[ActivityPl
   lazy val fit: Double = {
     val ratings = for (activityPlace <- activityPlaces.toSeq) yield individual.activityRatings(activityPlace.activity.name)
     val result = 10 * ratings.sum
-    logger.info(s"Individual plan fit = $result")
+//    logger.debug(s"Individual plan fit = $result")
     result
   }
 
