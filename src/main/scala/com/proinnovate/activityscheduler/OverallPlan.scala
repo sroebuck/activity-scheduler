@@ -52,6 +52,19 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     this.withAllocation(activityPlace, individual)
   }
 
+  lazy val individualPlansReport = {
+    val nameMap = individualPlans.map( p => p.individual.uniqueName -> p).toMap
+    val nameMapNamesInOrder = nameMap.keys.toSeq.sorted
+    val individuals = for {
+      name <- nameMapNamesInOrder
+      plan <- nameMap.get(name)
+    } yield {
+      val places = plan.activityPlaces.toSeq.sortBy(_.slot.startDateTime.getMillis)
+      (name + ":").padTo(25, ' ') + places.map(p => (p.activity.name + f" [${plan.individual.activityRatings(p.activity.name)}%.1f]").padTo(25, ' ')).mkString(" ")
+    }
+    individuals.mkString("\n")
+  }
+
   // PRIVATE
 
   private def unusedActivityPlacesForSlot(slot: Slot): Set[ActivityPlace] = {

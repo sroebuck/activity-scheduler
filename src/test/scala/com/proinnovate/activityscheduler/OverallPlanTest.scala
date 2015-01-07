@@ -24,7 +24,7 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
     // Test the fit
     logger.info(s"plan.fit = ${plan.fit}")
     assert(plan.fit._1 > 7)
-    logger.info(s"plan = $plan")
+    logger.info(s"plan =\n${plan.individualPlansReport}")
   }
 
   def randomPlan() = {
