@@ -22,6 +22,8 @@ case class IndividualPlan(individual: Individual, activityPlaces: Set[ActivityPl
 
   lazy val freeSlots: Set[Slot] = overallSlots -- activityPlaces.map(_.slot)
 
+  lazy val activities: Set[Activity] = activityPlaces.map(_.activity)
+
   def withPlace(activityPlace: ActivityPlace) = copy(activityPlaces = activityPlaces + activityPlace)
 
   def hasFreeSlot(slot: Slot) = freeSlots.contains(slot)

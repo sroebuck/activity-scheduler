@@ -45,7 +45,11 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
   def withRandomAllocatedActivity() = {
 //    val activityPlace = randomUnallocatedActivityPlace
     val (individual,slot) = randomUnallocatedIndividualSlot
-    val freeActivities = unusedActivityPlacesForSlot(slot).toSeq
+    val freeActivitiesPreFiltered = unusedActivityPlacesForSlot(slot).toSeq
+    // Filter out activities that are already allocated for the individual
+    val individualPlanOpt = individualPlans.find(_.individual == individual)
+    assert(individualPlanOpt.isDefined, "There must be a plan for the individual to start with!")
+    val freeActivities = freeActivitiesPreFiltered.filter(x => !individualPlanOpt.get.activities.contains(x.activity))
     assert(freeActivities.size > 0, "There must be some free activity places in order to allocate them!")
     val selection = (freeActivities.size * math.random).toInt
     val activityPlace = freeActivities(selection)
@@ -60,9 +64,28 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
       plan <- nameMap.get(name)
     } yield {
       val places = plan.activityPlaces.toSeq.sortBy(_.slot.startDateTime.getMillis)
-      (name + ":").padTo(25, ' ') + places.map(p => (p.activity.name + f" [${plan.individual.activityRatings(p.activity.name)}%.1f]").padTo(25, ' ')).mkString(" ")
+      (name + ":").padTo(25, ' ') + places.map(p => (p.activity.name + f" [${plan.individual.activityRatings(p.activity.name)}%.1f]").padTo(28, ' ')).mkString(" ")
     }
     individuals.mkString("\n")
+  }
+
+  lazy val activitySlotsReport = {
+    val placeActivityTuple = for {
+      individualPlan <- individualPlans
+      individual = individualPlan.individual
+      place <- individualPlan.activityPlaces
+    } yield place -> individual
+    val placeMap: Map[ActivityPlace, Individual] = placeActivityTuple.toMap
+    val slots: Seq[Slot] = placeMap.toMap.keys.map(_.slot).toSet.toSeq.sortBy{x:Slot => x.startDateTime.getMillis}
+    val activities = for {
+      slot <- slots
+      slotActivities = placeMap.keys.filter(_.slot == slot).toSeq.sortBy(_.activity.name)
+      activity <- slotActivities
+      individuals = placeActivityTuple.filter(_._1 == activity).map(_._2)
+    } yield {
+      slot.name + ": " + activity.activity.name + " - " + individuals.map(_.uniqueName).mkString(",")
+    }
+    activities.mkString("\n")
   }
 
   // PRIVATE
