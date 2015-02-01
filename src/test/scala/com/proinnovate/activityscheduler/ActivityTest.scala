@@ -18,19 +18,15 @@ class ActivityTest extends FunSuite {
 
     val slot1ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,High Ropes,Adventure Golf,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
     val slot1Activities = slot1ActivityNames.map(name => Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2))
-    println(slot1Activities)
 
     val slot2ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
     val slot2Activities = slot2ActivityNames.map(name => Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2))
-    println(slot2Activities)
 
     val slot3ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
     val slot3Activities = slot3ActivityNames.map(name => Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2))
-    println(slot3Activities)
 
     val slot4ActivityNames = "Archery,Trail Biking,Ropes,Tree Climb,Adventure Golf,Orienteering,Games Hall,Football,Adventure Playground".split(',').toSeq
     val slot4Activities = slot4ActivityNames.map(name => Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2))
-    println(slot4Activities)
 
   }
 

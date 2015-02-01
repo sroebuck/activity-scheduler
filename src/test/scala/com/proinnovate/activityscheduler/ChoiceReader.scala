@@ -8,7 +8,7 @@ import scala.util.Try
 
 object ChoiceReader {
 
-  def readActivitiesAndIndividuals(inputStream: InputStream): (Seq[String], Seq[Individual]) = {
+  def readActivitiesAndIndividuals(inputStream: InputStream): (Seq[String], Set[Individual]) = {
     implicit object TabDelimitedFormat extends DefaultCSVFormat {
       override val delimiter = '\t'
     }
@@ -32,8 +32,9 @@ object ChoiceReader {
       val activityRatings = ActivityRatings(activityRatingMap.toMap)
       Individual(name, group, activityRatings)
     }
+    val result = (activityHeadings, individuals.toSet)
     inputStream.close()
-    (activityHeadings, individuals.toSeq)
+    result
   }
 
 }

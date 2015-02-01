@@ -11,6 +11,6 @@ case class Activity(name: String, min: Int = 2, max: Int = 6) {
 
 object Activity {
 
-  val universalNameSet = Set("Archery","Trail Biking","Ropes","Tree Climb","High Ropes","Adventure Golf","Pitch & Putt","Orienteering","Games Hall","Football","Adventure Playground")
+  val universalNameSet = Set("Archery","Trail Biking","Ropes Course","Tree Climb","High Ropes","Adventure Golf","Pitch & Putt","Orienteering","Games Hall","Football","Adventure Playground")
 
 }

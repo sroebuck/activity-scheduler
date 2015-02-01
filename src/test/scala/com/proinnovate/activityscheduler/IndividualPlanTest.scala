@@ -2,7 +2,7 @@ package com.proinnovate.activityscheduler
 
 object IndividualPlanTest {
 
-  val individualPlans = {
+  val individualPlans: Set[IndividualPlan] = {
     IndividualTest.individualSet.map {
       individual =>
         val activityPlaces = Set[ActivityPlace]()
