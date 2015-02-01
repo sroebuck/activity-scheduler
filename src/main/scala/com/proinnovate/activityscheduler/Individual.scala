@@ -4,7 +4,4 @@
 
 package com.proinnovate.activityscheduler
 
-case class Individual(uniqueName: String, activityRatings: ActivityRatings) {
-
-}
-
+case class Individual(uniqueName: String, groupId: String, activityRatings: ActivityRatings)
