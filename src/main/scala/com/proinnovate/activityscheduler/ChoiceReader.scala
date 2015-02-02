@@ -1,6 +1,6 @@
 package com.proinnovate.activityscheduler
 
-import java.io.{InputStreamReader, InputStream}
+import java.io.{InputStream, InputStreamReader}
 
 import com.github.tototoshi.csv.{CSVReader, DefaultCSVFormat}
 

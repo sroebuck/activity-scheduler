@@ -13,6 +13,7 @@ libraryDependencies ++= {
     // Date Library
     "joda-time"           %  "joda-time" % "2.6",
     "org.joda"            %  "joda-convert" % "1.7",
+    "com.typesafe.play"   %  "play-json_2.11" % "2.4.0-M2",
     "com.github.tototoshi" %% "scala-csv" % "1.1.2",
     // Spray stuff
     "io.spray"            %% "spray-can"     % sprayVersion,

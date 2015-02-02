@@ -1,5 +1,8 @@
 package com.proinnovate.activityscheduler
 
+import java.io.InputStream
+import org.joda.time.DateTime
+
 /**
  * This represents the state of an overall plan at any point in the planning process.
  *
@@ -140,6 +143,100 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     val sSelection = (freeSlots.size * math.random).toInt
     val slot = freeSlots(sSelection)
     (individual,slot)
+  }
+
+}
+
+object OverallPlan {
+
+  def randomPlan(start: OverallPlan) = {
+    var plan = start
+    while(plan.notComplete) {
+      plan = plan.withRandomAllocatedActivity()
+    }
+    plan
+  }
+
+  def randomBestOf(start: OverallPlan, tryingNo: Int, keepingNo: Int): OverallPlan = {
+    var plans = Seq.fill(keepingNo)(start)
+    while(plans(0).notComplete) {
+      plans = bestNextRandomIteration(plans, tryingNo, keepingNo)
+    }
+    plans.sortBy(- _.fit._1).take(1).head
+  }
+
+  def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
+    val nextPlans = for {
+      plan <- plans
+      nextSteps <- 1 to tryingNo
+    } yield plan.withRandomAllocatedActivity()
+    val results = nextPlans.sortBy(- _.fit._1).take(keepingNo)
+    // logger.debug(s"Iteration fit: ${results.head.fit}")
+    results
+  }
+
+  def bestOfSelection(start: OverallPlan, f: () => OverallPlan, sampleSize: Int): OverallPlan = {
+    (0 to sampleSize).foldLeft(start) {
+      (best: OverallPlan, sample: Int) =>
+        val plan = f()
+        if (plan.fit._1 > best.fit._1) plan else best
+    }
+  }
+
+  def realPlanFromActivitiesAndIndividualStream(inputStream: InputStream): OverallPlan = {
+    val overallSlots = {
+      val slot1 = Slot("11am-12noon", new DateTime(2015,2,14,11,0),new DateTime(2015,2,14,12,0))
+      val slot2 = Slot("12noon-1pm", new DateTime(2015,2,14,12,0),new DateTime(2015,2,14,13,0))
+      val slot3 = Slot("2pm-3pm", new DateTime(2015,2,14,14,0),new DateTime(2015,2,14,15,0))
+      val slot4 = Slot("3pm-4pm", new DateTime(2015,2,14,15,0),new DateTime(2015,2,14,16,0))
+      Set(slot1,slot2,slot3,slot4)
+    }
+
+    val activityPlaceSet: Set[ActivityPlace] = {
+      val slot1 = Slot("11am-12noon", new DateTime(2015, 2, 14, 11, 0), new DateTime(2015, 2, 14, 12, 0))
+      val slot2 = Slot("12noon-1pm", new DateTime(2015, 2, 14, 12, 0), new DateTime(2015, 2, 14, 13, 0))
+      val slot3 = Slot("2pm-3pm", new DateTime(2015, 2, 14, 14, 0), new DateTime(2015, 2, 14, 15, 0))
+      val slot4 = Slot("3pm-4pm", new DateTime(2015, 2, 14, 15, 0), new DateTime(2015, 2, 14, 16, 0))
+      val minMaxMappings = Map("Archery" -> (2, 6), "Trail Biking" -> (2, 6), "Ropes Course" -> (2, 6),
+        "Tree Climb" -> (1, 3), "High Ropes" -> (2, 6), "Adventure Golf" -> (2, 6), "Pitch & Putt" -> (2, 6),
+        "Orienteering" -> (6, 20), "Games Hall" -> (5, 20), "Football" -> (4, 20), "Adventure Playground" -> (6, 20))
+      val slot1ActivityNames = ("Archery,Trail Biking,Ropes Course,Tree Climb,High Ropes,Adventure Golf,Orienteering," +
+        "Games Hall,Football,Adventure Playground").split(',').toSeq
+      val slot1Places = slot1ActivityNames.map(name =>
+        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
+      val slot2ActivityNames = ("Archery,Trail Biking,Ropes Course,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt," +
+        "Orienteering,Games Hall,Football,Adventure Playground").split(',').toSeq
+      val slot2Places = slot2ActivityNames.map(name =>
+        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot2))
+      val slot3ActivityNames = ("Archery,Trail Biking,Ropes Course,Tree Climb,High Ropes,Adventure Golf,Pitch & Putt," +
+        "Orienteering,Games Hall,Football,Adventure Playground").split(',').toSeq
+      val slot3Places = slot3ActivityNames.map(name =>
+        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot3))
+      val slot4ActivityNames = ("Archery,Trail Biking,Ropes Course,Tree Climb,Adventure Golf,Orienteering,Games Hall," +
+        "Football,Adventure Playground").split(',').toSeq
+      val slot4Places = slot4ActivityNames.map(name =>
+        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot4))
+      (slot1Places ++ slot2Places ++ slot3Places ++ slot4Places).toSet
+    }
+
+    val realIndividualPlans: Set[IndividualPlan] = {
+      val (_, individuals) = ChoiceReader.readActivitiesAndIndividuals(inputStream)
+      individuals.map {
+        individual =>
+          val activityPlaces = Set[ActivityPlace]()
+          IndividualPlan(individual, activityPlaces, overallSlots)
+      }
+    }
+
+    val realDataStartPlan = {
+      val unusedActivityMap:Map[ActivityPlace,Int] = activityPlaceSet.map {
+        activityPlace =>
+          (activityPlace, activityPlace.activity.max)
+      }.toMap
+      OverallPlan(unusedActivityMap, realIndividualPlans)
+    }
+
+    OverallPlan.randomBestOf(realDataStartPlan, 10,100)
   }
 
 }
