@@ -9,10 +9,11 @@ var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var server = require('gulp-server-livereload');
 var react = require('gulp-react');
-
+var to5 = require('gulp-6to5');
+ 
 // Lint Task
 gulp.task('lint', function() {
-    return gulp.src('js/*.js')
+    return gulp.src('dist/*.jsx')
         .pipe(jshint())
         .pipe(jshint.reporter('default'));
 });
@@ -37,7 +38,7 @@ gulp.task('scripts', function() {
 // Watch Files For Changes
 gulp.task('watch', function() {
     gulp.watch('js/*.js', ['lint', 'scripts']);
-    gulp.watch('js/*.jsx', ['react']);
+    gulp.watch('js/*.jsx', ['6to5']);
     gulp.watch('scss/*.scss', ['sass']);
 });
 
@@ -58,5 +59,12 @@ gulp.task('react', function () {
         .pipe(gulp.dest('dist'));
 });
 
+// 6to5 Task
+gulp.task('6to5', function () {
+    return gulp.src('js/*.js*')
+        .pipe(to5())
+        .pipe(gulp.dest('dist'));
+});
+
 // Default Task
-gulp.task('default', ['react', 'lint', 'sass', 'scripts', 'webserver', 'watch']);
+gulp.task('default', ['6to5', 'lint', 'sass', 'scripts', 'watch']);
