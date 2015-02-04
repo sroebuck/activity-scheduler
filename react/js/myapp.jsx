@@ -1,3 +1,5 @@
+const textAlignCenter = { textAlign: "center" };
+
 let ScheduleTableElement = React.createClass({
   getInitialState: () => ({ plans: [] }),
   componentDidMount: function () {
@@ -8,15 +10,22 @@ let ScheduleTableElement = React.createClass({
     });
   },
   render: function () {
+    let sortedPlans = _.sortBy(this.state.plans, plan => plan.individual.name)
     return (
       <div>
-        <p>There were {this.state.plans.length} individuals plans found.</p>
         <table className="table table-striped table-condensed">
           <thead>
-            <tr><th>Name</th><th>Group</th></tr>
+            <tr>
+              <th>Name</th>
+              <th style={textAlignCenter}>Group</th>
+              <th>11am-12noon</th>
+              <th>12noon-1pm</th>
+              <th>2pm-3pm</th>
+              <th>3pm-4pm</th>
+            </tr>
           </thead>
           <tbody>{
-            this.state.plans.map( plan => {
+            sortedPlans.map( plan => {
               let i = plan.individual;
               return <IndividualTableLine key={i.name} name={i.name} group={i.group} ratings={i.ratings} places={plan.places} />;
             })
@@ -30,6 +39,10 @@ let ScheduleTableElement = React.createClass({
 let IndividualTableLine = React.createClass({
   render: function () {
     let _props = this.props;
+    let ratingsObj = _props.ratings;
+    let ratings = Object.keys(ratingsObj).map( key => [key, ratingsObj[key]]);
+    let sortedRatings = _.sortBy(ratings, ([key,value]) => -value);
+    let preferences = new Map(_.zip(sortedRatings.map( ([k,v]) => k ), [1,2,3,4,5,6,7,8,9,10,11,12]));
     let places = new Map(_props.places.map( place => [place.slot, place.activity]));
     let a1 = places.get("11am-12noon");
     let a2 = places.get("12noon-1pm");
@@ -37,16 +50,33 @@ let IndividualTableLine = React.createClass({
     let a4 = places.get("3pm-4pm");
     return (
       <tr>
-        <td>{_props.name}</td>
-        <td>{_props.group}</td>
-        <td>{a1}</td>
-        <td>{a2}</td>
-        <td>{a3}</td>
-        <td>{a4}</td>
+        <th>{_props.name}</th>
+        <td style={textAlignCenter}>{_props.group}</td>
+        <ActivityEntity activity={a1} preferences={preferences} />
+        <ActivityEntity activity={a2} preferences={preferences} />
+        <ActivityEntity activity={a3} preferences={preferences} />
+        <ActivityEntity activity={a4} preferences={preferences} />
       </tr>
     );
   }
 });
+
+let ActivityEntity = React.createClass({
+  render: function () {
+    let _props = this.props;
+    let activity = _props.activity;
+    let preference = _props.preferences.get(activity);
+    var theStyle = {};
+    if (preference <= 2) {
+      theStyle = { color: "green" };
+    } else if (preference >= 5) {
+      theStyle = { color: "red" };
+    }
+    return (
+      <td style={theStyle}>{activity} <span className="badge">{preference}</span></td>
+    );
+  }
+})
 
 React.render(
   <ScheduleTableElement source="/test.json" />,
