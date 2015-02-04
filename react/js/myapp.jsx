@@ -1,42 +1,32 @@
-var ExampleApplication = React.createClass({
+let ScheduleTableElement = React.createClass({
+  getInitialState: () => ({ plans: [] }),
+  componentDidMount: function () {
+    $.getJSON(this.props.source, result => {
+      this.setState({
+        plans: result.plans
+      });
+    });
+  },
   render: function () {
-    var elapsed = Math.round(this.props.elapsed  / 10);
-    var seconds = elapsed / 100 + (elapsed % 100 ? '' : '.00' );
-    var message =
-      'React has been successfully running for ' + seconds + ' seconds.';
-
-    return <small>{message}</small>;
+    return (
+      <div>
+        <p>There were {this.state.plans.length} individuals plans found.</p>
+        <table>
+        {
+          this.state.plans.map( plan =>
+            <IndividualTableLine key={plan.individual.name} name={plan.individual.name} />
+          )
+        }
+        </table>
+      </div>
+    );
   }
 });
 
-var start = new Date().getTime();
-setInterval( () => {
-  React.render(
-    <ExampleApplication elapsed={new Date().getTime() - start} />,
-    document.getElementById('container')
-  );
-}, 10);
-
-var ScheduleTableElement = React.createClass({
-  getInitialState: () => {
-      return {
-        plans: []
-      };
-    },
-  componentDidMount: function () {
-      $.getJSON(this.props.source, function (result) {
-        this.setState({
-          plans: result.plans
-        });
-      }.bind(this));
-    },
+let IndividualTableLine = React.createClass({
   render: function () {
-      return (
-        <div>
-          <p>There were {this.state.plans.length} individuals plans found.</p>
-        </div>
-      );
-    }
+    return <tr><td>{this.props.name}</td></tr>;
+  }
 });
 
 React.render(

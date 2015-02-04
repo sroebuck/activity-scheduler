@@ -1,38 +1,17 @@
 "use strict";
 
-var ExampleApplication = React.createClass({
-  displayName: "ExampleApplication",
-  render: function () {
-    var elapsed = Math.round(this.props.elapsed / 10);
-    var seconds = elapsed / 100 + (elapsed % 100 ? "" : ".00");
-    var message = "React has been successfully running for " + seconds + " seconds.";
-
-    return React.createElement(
-      "small",
-      null,
-      message
-    );
-  }
-});
-
-var start = new Date().getTime();
-setInterval(function () {
-  React.render(React.createElement(ExampleApplication, { elapsed: new Date().getTime() - start }), document.getElementById("container"));
-}, 10);
-
 var ScheduleTableElement = React.createClass({
   displayName: "ScheduleTableElement",
   getInitialState: function () {
-    return {
-      plans: []
-    };
+    return { plans: [] };
   },
   componentDidMount: function () {
-    $.getJSON(this.props.source, (function (result) {
-      this.setState({
+    var _this = this;
+    $.getJSON(this.props.source, function (result) {
+      _this.setState({
         plans: result.plans
       });
-    }).bind(this));
+    });
   },
   render: function () {
     return React.createElement(
@@ -44,6 +23,28 @@ var ScheduleTableElement = React.createClass({
         "There were ",
         this.state.plans.length,
         " individuals plans found."
+      ),
+      React.createElement(
+        "table",
+        null,
+        this.state.plans.map(function (plan) {
+          return React.createElement(IndividualTableLine, { key: plan.individual.name, name: plan.individual.name });
+        })
+      )
+    );
+  }
+});
+
+var IndividualTableLine = React.createClass({
+  displayName: "IndividualTableLine",
+  render: function () {
+    return React.createElement(
+      "tr",
+      null,
+      React.createElement(
+        "td",
+        null,
+        this.props.name
       )
     );
   }
