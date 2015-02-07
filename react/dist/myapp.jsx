@@ -2,6 +2,11 @@
 
 var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } };
 
+/* global React */
+/* global _ */
+/* global $:false */
+/* global tableNode */
+
 var textAlignCenter = { textAlign: "center" };
 
 var ScheduleTableElement = React.createClass({
@@ -154,4 +159,22 @@ var ActivityEntity = React.createClass({
   }
 });
 
-React.render(React.createElement(ScheduleTableElement, { source: "/test.json" }), tableNode);
+var SlotsTableEntity = React.createClass({
+  displayName: "SlotsTableEntity",
+  getInitialState: function () {
+    return { plans: [] };
+  },
+  componentDidMount: function () {
+    var _this = this;
+    $.getJSON(this.props.source, function (result) {
+      _this.setState({
+        plans: result.plans
+      });
+    });
+  },
+  render: function () {}
+});
+
+React.render(React.createElement(ScheduleTableElement, { source: "/data/test.json" }), tableNode);
+// Take this.state.plans
+// Take each plan.places and flatten them into one big list

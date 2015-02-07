@@ -1,3 +1,8 @@
+/* global React */
+/* global _ */
+/* global $:false */
+/* global tableNode */
+
 const textAlignCenter = { textAlign: "center" };
 
 let ScheduleTableElement = React.createClass({
@@ -78,7 +83,22 @@ let ActivityEntity = React.createClass({
   }
 })
 
+let SlotsTableEntity = React.createClass({
+  getInitialState: () => ({ plans: [] }),
+  componentDidMount: function () {
+    $.getJSON(this.props.source, result => {
+      this.setState({
+        plans: result.plans
+      });
+    });
+  },
+  render: function () {
+    // Take this.state.plans
+    // Take each plan.places and flatten them into one big list
+  }
+})
+
 React.render(
-  <ScheduleTableElement source="/test.json" />,
+  <ScheduleTableElement source="/data/test.json" />,
   tableNode
 );

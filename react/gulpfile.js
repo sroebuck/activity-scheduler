@@ -7,7 +7,7 @@ var sass = require('gulp-sass');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
-var server = require('gulp-server-livereload');
+var server = require('gulp-webserver');
 var react = require('gulp-react');
 var to5 = require('gulp-6to5');
  
@@ -37,18 +37,20 @@ gulp.task('scripts', function() {
 
 // Watch Files For Changes
 gulp.task('watch', function() {
-    gulp.watch('js/*.js', ['lint', 'scripts']);
     gulp.watch('js/*.jsx', ['6to5']);
+    gulp.watch('js/*.jsx', ['lint', 'scripts']);
     gulp.watch('scss/*.scss', ['sass']);
 });
 
 // Server Task
 gulp.task('webserver', function() {
-  gulp.src('.')
+  gulp.src('dist')
     .pipe(server({
+      host: "0.0.0.0",
+      port: 8000,
       livereload: true,
-      directoryListing: true,
-      open: true
+      open: "http://localhost:8000/index.html",
+      proxies: [{source: "/data", target: "http://localhost:8080"}]
     }));
 });
 
