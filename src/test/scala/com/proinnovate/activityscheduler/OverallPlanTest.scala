@@ -18,16 +18,15 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
   }
 
   test("An overall plan can be constructed and results in a reasonable overall fit") {
-//    val plan = bestOfSelection(randomPlan, 1000)
     val plan = OverallPlan.randomBestOf(randomStartPlan, 10,100)
     // Generate overall plan
     assert(plan.unusedActivityPlaces.size > 0)
     assert(plan.individualPlans.size > 0)
     // Test the fit
-    logger.info(s"plan.fit = ${plan.fit}")
+    logger.debug(s"plan.fit = ${plan.fit}")
     assert(plan.fit._1 > 7)
-    logger.info(s"plan =\n${plan.individualPlansReport}")
-    logger.info(s"activities =\n${plan.activitySlotsReport}")
+    logger.debug(s"plan =\n${plan.individualPlansReport}")
+    logger.debug(s"activities =\n${plan.activitySlotsReport}")
   }
   
   test("Try another plan with some more realistic input data") {
