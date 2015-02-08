@@ -7,7 +7,11 @@ import com.typesafe.scalalogging.LazyLogging
  */
 case class IndividualPlan(individual: Individual, activityPlaces: Set[ActivityPlace], overallSlots: Set[Slot]) extends LazyLogging {
 
-  assert( activityPlaces.map(_.slot).size == activityPlaces.size, "There must only be one allocation to any given slot")
+  require( activityPlaces.map(_.slot).size == activityPlaces.size, "There must only be one allocation to any given slot")
+  require( {
+    val oneOnlyGroups = activityPlaces.toSeq.flatMap(_.activity.oneOnlyGroupOpt)
+    oneOnlyGroups.toSet.size == oneOnlyGroups.size
+  } , "Only one member of any oneOnlyGroup may exist in an individual plan")
 
   /**
    * This value is an approximation of the suitability of the set of activities to the individual.

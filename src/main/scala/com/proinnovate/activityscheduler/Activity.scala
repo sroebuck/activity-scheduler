@@ -3,7 +3,7 @@ package com.proinnovate.activityscheduler
 /*
  * Copyright (c) Stuart Roebuck, 2014
  */
-case class Activity(name: String, min: Int = 2, max: Int = 6) {
+case class Activity(name: String, min: Int = 2, max: Int = 6, oneOnlyGroupOpt: Option[String] = None) {
   require(Activity.universalNameSet.contains(name), s"Unknown activity name: $name")
 
   override def toString = name

@@ -54,10 +54,15 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     // Filter out activities that are already allocated for the individual
     val individualPlanOpt = individualPlans.find(_.individual == individual)
     assert(individualPlanOpt.isDefined, "There must be a plan for the individual to start with!")
-    val freeActivities = freeActivitiesPreFiltered.filter(x => !individualPlanOpt.get.activities.contains(x.activity))
-    assert(freeActivities.size > 0, "There must be some free activity places in order to allocate them!")
-    val selection = (freeActivities.size * math.random).toInt
-    val activityPlace = freeActivities(selection)
+    val individualPlan = individualPlanOpt.get
+    // Remove any activities that are already in the individual's plan...
+    val freeActivities = freeActivitiesPreFiltered.filter(x => !individualPlan.activities.contains(x.activity))
+    // Remove any activities that are duplicates in oneGroupOnly groups...
+    val existingOneOnlyGroups: Set[String] = individualPlan.activities.flatMap(_.oneOnlyGroupOpt)
+    val nonGroupDuplicateActivities = freeActivities.filter(x => !existingOneOnlyGroups.contains(x.activity.oneOnlyGroupOpt.getOrElse("")))
+    assert(nonGroupDuplicateActivities.size > 0, "There must be some free activity places in order to allocate them!")
+    val selection = (nonGroupDuplicateActivities.size * math.random).toInt
+    val activityPlace = nonGroupDuplicateActivities(selection)
     this.withAllocation(activityPlace, individual)
   }
 
@@ -199,20 +204,25 @@ object OverallPlan {
       val slot2 = Slot("12noon-1pm", new DateTime(2015, 2, 14, 12, 0), new DateTime(2015, 2, 14, 13, 0))
       val slot3 = Slot("2pm-3pm", new DateTime(2015, 2, 14, 14, 0), new DateTime(2015, 2, 14, 15, 0))
       val slot4 = Slot("3pm-4pm", new DateTime(2015, 2, 14, 15, 0), new DateTime(2015, 2, 14, 16, 0))
-      val minMaxMappings = Map("Archery" -> (2, 6), "Trail Biking" -> (2,6), "Ropes Course" -> (2,7), "High Ropes" -> (2,6), 	"Adventure Golf" -> (2,6), "Baking" -> (2,12), "Crafts" -> (2,12), "Fire Starter" -> (2,12), "Video & Photography" -> (2,15),	"Mental Mayhem" -> (2,12), "Indoor Games" -> (5,15),	"Games Hall" -> (5,15), "Football" -> (4,14),	"Adventure Playground" -> (6,24), "Another" -> (2,8))
-      val allActivityNames = minMaxMappings.map{ case (name, _) => name }.toSet
+      val mappings = Map("Archery" -> (2, 6, Some("A")), "Trail Biking" -> (2,6, Some("A")),
+          "Ropes Course" -> (2,7, Some("A")), "High Ropes" -> (2,6, Some("A")), 	"Adventure Golf" -> (2,6,None),
+          "Baking" -> (2,12,None), "Crafts" -> (2,12,None), "Fire Starter" -> (2,12,None),
+          "Video & Photography" -> (2,15,None),	"Mental Mayhem" -> (2,12,None), "Indoor Games" -> (5,15,None),
+          "Games Hall" -> (5,15,None), "Football" -> (4,14,None),	"Adventure Playground" -> (6,24,None),
+          "Another" -> (2,8,None))
+      val allActivityNames = mappings.map{ case (name, _) => name }.toSet
       val slot1ActivityNames = allActivityNames -- Set("Fire Starter", "Video & Photography", "Indoor Games", "Another")
       val slot1Places = slot1ActivityNames.map(name =>
-        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot1))
+        ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot1))
       val slot2ActivityNames = allActivityNames -- Set("Crafts", "Mental Mayhem", "Another")
       val slot2Places = slot2ActivityNames.map(name =>
-        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot2))
+        ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot2))
       val slot3ActivityNames = allActivityNames -- Set("Adventure Golf", "Mental Mayhem", "Another")
       val slot3Places = slot3ActivityNames.map(name =>
-        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot3))
+        ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot3))
       val slot4ActivityNames = allActivityNames -- Set("Baking", "Fire Starter", "Video & Photography", "Indoor Games", "Another")
       val slot4Places = slot4ActivityNames.map(name =>
-        ActivityPlace(Activity(name, minMaxMappings(name)._1, minMaxMappings(name)._2), slot4))
+        ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot4))
       (slot1Places ++ slot2Places ++ slot3Places ++ slot4Places).toSet
     }
 
@@ -233,7 +243,7 @@ object OverallPlan {
       OverallPlan(unusedActivityMap, realIndividualPlans)
     }
 
-    OverallPlan.randomBestOf(realDataStartPlan, 100,100)
+    OverallPlan.randomBestOf(realDataStartPlan, 100,20)
   }
 
 }

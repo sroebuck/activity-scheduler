@@ -7,7 +7,7 @@ const textAlignCenter = { textAlign: "center" };
 
 const ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts",
     "Fire Starter","Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
-    "Adventure Playground", "Another"];
+    "Adventure Playground"];
 
 let OverallScheduleDisplay = React.createClass({
   getInitialState: () => ({
@@ -101,11 +101,7 @@ let ScheduleTableElement = React.createClass({
   }
 });
 
-let ratingsToPreferences = (ratingsObj) => {
-  let ratings = _.pairs(ratingsObj);
-  let sortedRatings = _.sortBy(ratings, ([key,value]) => -value);
-  return new Map(_.zip(sortedRatings.map( ([k,v]) => k ), [1,2,3,4,5,6,7,8,9,10,11,12]));
-};
+let ratingsToPreferences = (ratingsObj) => new Map(_.pairs(ratingsObj));
 
 let IndividualTableLine = React.createClass({
   render: function () {
@@ -136,7 +132,7 @@ let ActivityEntity = React.createClass({
     let activity = _props.activity;
     let preference = _props.preferences.get(activity);
     var theStyle = {};
-    if (preference <= 2) {
+    if (preference <= 3) {
       theStyle = { color: "green" };
     } else if (preference >= 5) {
       theStyle = { color: "red" };
@@ -150,17 +146,7 @@ let ActivityEntity = React.createClass({
 let IndividualEntity = React.createClass({
   render: function () {
     let _props = this.props;
-    let activity = _props.activity;
-    let preference = _props.preferences.get(activity);
-    var className = "label label-default";
-    if (preference <= 2) {
-      className = "label label-success";
-    } else if (preference >= 5) {
-      className = "label label-danger";
-    }
-    return (
-      <span>{_props.display.replace(/ /g, '\u00a0')}&nbsp;<span className="badge">{preference}</span> </span>
-    );
+    return _props.display.replace(/ /g, '\u00a0').join(", ");
   }
 })
 
@@ -198,10 +184,7 @@ let SlotTableEntity = React.createClass({
               return (
                 <tr key={activity}><th>{activity.replace(/ /g, '\u00a0')}</th><td>
                   {
-                    group[1].map( x => {
-                      let preferences = ratingsToPreferences(x.ratings);
-                      return <IndividualEntity key={x.name} activity={activity} preferences={preferences} display={x.name} />;
-                    })
+                    group[1].map( x => x.name.replace(/ /g, '\u00a0')).join(", ")
                   }
                 </td></tr>
               );
@@ -263,7 +246,7 @@ let PreferenceEntity = React.createClass({
     let preference = _props.preferences.get(activity);
     let className = '';
     if (isPlaced) {
-      if (preference <= 2) {
+      if (preference <= 3) {
         className = 'success';
       } else if (preference >= 5) {
         className = 'danger';

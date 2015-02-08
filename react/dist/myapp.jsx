@@ -1,7 +1,5 @@
 "use strict";
 
-var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } };
-
 /* global React */
 /* global _ */
 /* global $:false */
@@ -9,7 +7,7 @@ var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; }
 
 var textAlignCenter = { textAlign: "center" };
 
-var ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football", "Adventure Playground", "Another"];
+var ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football", "Adventure Playground"];
 
 var OverallScheduleDisplay = React.createClass({
   displayName: "OverallScheduleDisplay",
@@ -181,21 +179,7 @@ var ScheduleTableElement = React.createClass({
 });
 
 var ratingsToPreferences = function (ratingsObj) {
-  var ratings = _.pairs(ratingsObj);
-  var sortedRatings = _.sortBy(ratings, function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 2);
-
-    var key = _ref2[0];
-    var value = _ref2[1];
-    return -value;
-  });
-  return new Map(_.zip(sortedRatings.map(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 2);
-
-    var k = _ref2[0];
-    var v = _ref2[1];
-    return k;
-  }), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]));
+  return new Map(_.pairs(ratingsObj));
 };
 
 var IndividualTableLine = React.createClass({
@@ -239,7 +223,7 @@ var ActivityEntity = React.createClass({
     var activity = _props.activity;
     var preference = _props.preferences.get(activity);
     var theStyle = {};
-    if (preference <= 2) {
+    if (preference <= 3) {
       theStyle = { color: "green" };
     } else if (preference >= 5) {
       theStyle = { color: "red" };
@@ -262,26 +246,7 @@ var IndividualEntity = React.createClass({
   displayName: "IndividualEntity",
   render: function () {
     var _props = this.props;
-    var activity = _props.activity;
-    var preference = _props.preferences.get(activity);
-    var className = "label label-default";
-    if (preference <= 2) {
-      className = "label label-success";
-    } else if (preference >= 5) {
-      className = "label label-danger";
-    }
-    return React.createElement(
-      "span",
-      null,
-      _props.display.replace(/ /g, " "),
-      " ",
-      React.createElement(
-        "span",
-        { className: "badge" },
-        preference
-      ),
-      " "
-    );
+    return _props.display.replace(/ /g, " ").join(", ");
   }
 });
 
@@ -349,9 +314,8 @@ var SlotTableEntity = React.createClass({
                 "td",
                 null,
                 group[1].map(function (x) {
-                  var preferences = ratingsToPreferences(x.ratings);
-                  return React.createElement(IndividualEntity, { key: x.name, activity: activity, preferences: preferences, display: x.name });
-                })
+                  return x.name.replace(/ /g, " ");
+                }).join(", ")
               )
             );
           })
@@ -449,7 +413,7 @@ var PreferenceEntity = React.createClass({
     var preference = _props.preferences.get(activity);
     var className = "";
     if (isPlaced) {
-      if (preference <= 2) {
+      if (preference <= 3) {
         className = "success";
       } else if (preference >= 5) {
         className = "danger";

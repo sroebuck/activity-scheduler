@@ -35,7 +35,7 @@ trait WebService extends HttpService {
     def writes(individual: Individual) = Json.obj(
       "name" -> individual.uniqueName,
       "group" -> individual.groupId,
-      "ratings" -> individual.activityRatings.normalisedRatingsMap
+      "ratings" -> individual.activityRatings.ratingsMap
     )
   }
   implicit val individualPlanWrites = new Writes[IndividualPlan] {
