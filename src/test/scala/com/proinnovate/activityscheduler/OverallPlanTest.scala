@@ -24,7 +24,7 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
     assert(plan.individualPlans.size > 0)
     // Test the fit
 //    logger.debug(s"plan.fit = ${plan.fit}")
-    assert(plan.fit._1 > 7)
+    assert(plan.fit.bestFit > 7)
 //    logger.debug(s"plan =\n${plan.individualPlansReport}")
 //    logger.debug(s"activities =\n${plan.activitySlotsReport}")
   }
@@ -36,7 +36,7 @@ class OverallPlanTest extends FunSuite with LazyLogging with DiagrammedAssertion
     assert(plan.individualPlans.size > 0)
     // Test the fit
 //    logger.info(s"plan.fit = ${plan.fit}")
-    assert(plan.fit._1 > 7)
+    assert(plan.fit.bestFit > 7)
 //    logger.info(s"plan =\n${plan.individualPlansReport}")
 //    logger.info(s"activities =\n${plan.activitySlotsReport}")
   }

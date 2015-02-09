@@ -9,9 +9,11 @@ const ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Ad
     "Fire Starter","Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
     "Adventure Playground"];
 
+let getHashQuery = () => location.hash.replace(/^#/, '');
+
 let OverallScheduleDisplay = React.createClass({
   getInitialState: () => ({
-    showing: 'preferences',
+    showing: getHashQuery() || 'preferences',
     plans: []
   }),
   componentDidMount: function () {
@@ -25,33 +27,28 @@ let OverallScheduleDisplay = React.createClass({
         })
       }
     });
-  },
-  handleShowActivitySlots: function (event) {
-    this.setState({showing: 'activity'});
-  },
-  handleShowSchedules: function (event) {
-    this.setState({showing: 'schedules'});
-  },
-  handleShowPreferences: function (event) {
-    this.setState({showing: 'preferences'});
+    window.onpopstate = event => this.setState({
+      showing: getHashQuery()
+    });
   },
   render: function () {
     let tabToShow;
-    if (this.state.showing == 'activity') {
+    let showing = this.state.showing;
+    if (showing == 'activity') {
       tabToShow = (
         <div>
           <h2>Activity Programme</h2>
           <SlotsTableEntity plans={this.state.plans} />
         </div>
       );
-    } else if (this.state.showing == 'schedules') {
+    } else if (showing == 'schedules') {
       tabToShow = (
         <div>
           <h2>Individual Schedules</h2>
           <ScheduleTableElement plans={this.state.plans} />
         </div>
       );
-    } else if (this.state.showing == 'preferences') {
+    } else if (showing == 'preferences') {
       tabToShow = (
         <div>
           <h2>Individual Preferences</h2>
@@ -63,9 +60,9 @@ let OverallScheduleDisplay = React.createClass({
     return (
       <div>
         <ul className="nav nav-tabs">
-          <li role="presentation" className={this.state.showing == 'preferences' ? 'active' : ''}><a href="#" onClick={this.handleShowPreferences}>Preferences</a></li>
-          <li role="presentation" className={this.state.showing == 'schedules' ? 'active' : ''}><a href="#" onClick={this.handleShowSchedules}>Schedules</a></li>
-          <li role="presentation" className={this.state.showing == 'activity' ? 'active' : ''}><a href="#" onClick={this.handleShowActivitySlots}>Activity Programme</a></li>
+          <li role="presentation" className={this.state.showing == 'preferences' ? 'active' : ''}><a href="#preferences">Preferences</a></li>
+          <li role="presentation" className={this.state.showing == 'schedules' ? 'active' : ''}><a href="#schedules">Schedules</a></li>
+          <li role="presentation" className={this.state.showing == 'activity' ? 'active' : ''}><a href="#activity">Activity Programme</a></li>
         </ul>
         {tabToShow}
       </div>
@@ -265,3 +262,4 @@ React.render(
   <OverallScheduleDisplay source="/data/test.json" />,
   overallScheduleDisplayNode
 );
+

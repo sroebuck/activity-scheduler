@@ -15,7 +15,12 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
 
   override def toString = s"OverallPlan(unusedPlaces=${unusedActivityPlaces.values.sum},$individualPlans)"
 
-  lazy val fit: (Double,Double,Double,Double) = {
+  case class Fit(bestFit: Double,
+                 min: Double,
+                 average: Double,
+                 max: Double)
+
+  lazy val fit: Fit = {
     val (minOut: Double, maxOut: Double, sumOut: Double) =
       individualPlans.foldLeft((Double.MaxValue, Double.MinValue, 0.0)) {
       case ((minIn: Double, maxIn: Double, sumIn: Double), plan) =>
@@ -24,10 +29,26 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
         val sumOut = sumIn + plan.fit
         (minOut, maxOut, sumOut)
     }
+    val average = sumOut / individualPlans.size
+    // Calculate the number of minimum allocation places that have not been filled yet.  This should count against
+    // a good score.
+    val totalUnderMinimum = unusedActivityPlaces.map {
+      case (place, countRemaining) =>
+        val used = place.activity.max - countRemaining
+        val underMinimum = place.activity.min - used
+        underMinimum
+    }.sum
     // Use the score of the minimum score for any one individual as the measure of the overall plan score.
     // In other words, focus on making sure that no one person misses out.
-    val average = sumOut / individualPlans.size
-    (minOut * 100 + average, minOut, average, maxOut)
+    val averageWeightedByIndMin = minOut * 100 + average
+    // Account for the number of missing minimum places
+    val bestFit = averageWeightedByIndMin - (100 * totalUnderMinimum)
+    Fit(
+      bestFit = bestFit,
+      min = minOut,
+      average = average,
+      max = maxOut
+    )
   }
 
   lazy val notComplete = {
@@ -169,7 +190,7 @@ object OverallPlan {
     while(plans(0).notComplete) {
       plans = bestNextRandomIteration(plans, tryingNo, keepingNo)
     }
-    plans.sortBy(- _.fit._1).take(1).head
+    plans.sortBy(- _.fit.bestFit).take(1).head
   }
 
   def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
@@ -177,7 +198,7 @@ object OverallPlan {
       plan <- plans
       nextSteps <- 1 to tryingNo
     } yield plan.withRandomAllocatedActivity()
-    val results = nextPlans.sortBy(- _.fit._1).take(keepingNo)
+    val results = nextPlans.sortBy(- _.fit.bestFit).take(keepingNo)
     // logger.debug(s"Iteration fit: ${results.head.fit}")
     results
   }
@@ -186,7 +207,7 @@ object OverallPlan {
     (0 to sampleSize).foldLeft(start) {
       (best: OverallPlan, sample: Int) =>
         val plan = f()
-        if (plan.fit._1 > best.fit._1) plan else best
+        if (plan.fit.bestFit > best.fit.bestFit) plan else best
     }
   }
 

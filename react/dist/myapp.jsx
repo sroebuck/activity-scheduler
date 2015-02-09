@@ -9,11 +9,15 @@ var textAlignCenter = { textAlign: "center" };
 
 var ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football", "Adventure Playground"];
 
+var getHashQuery = function () {
+  return location.hash.replace(/^#/, "");
+};
+
 var OverallScheduleDisplay = React.createClass({
   displayName: "OverallScheduleDisplay",
   getInitialState: function () {
     return {
-      showing: "preferences",
+      showing: getHashQuery() || "preferences",
       plans: []
     };
   },
@@ -29,19 +33,16 @@ var OverallScheduleDisplay = React.createClass({
         });
       }
     });
-  },
-  handleShowActivitySlots: function (event) {
-    this.setState({ showing: "activity" });
-  },
-  handleShowSchedules: function (event) {
-    this.setState({ showing: "schedules" });
-  },
-  handleShowPreferences: function (event) {
-    this.setState({ showing: "preferences" });
+    window.onpopstate = function (event) {
+      return _this.setState({
+        showing: getHashQuery()
+      });
+    };
   },
   render: function () {
     var tabToShow = undefined;
-    if (this.state.showing == "activity") {
+    var showing = this.state.showing;
+    if (showing == "activity") {
       tabToShow = React.createElement(
         "div",
         null,
@@ -52,7 +53,7 @@ var OverallScheduleDisplay = React.createClass({
         ),
         React.createElement(SlotsTableEntity, { plans: this.state.plans })
       );
-    } else if (this.state.showing == "schedules") {
+    } else if (showing == "schedules") {
       tabToShow = React.createElement(
         "div",
         null,
@@ -63,7 +64,7 @@ var OverallScheduleDisplay = React.createClass({
         ),
         React.createElement(ScheduleTableElement, { plans: this.state.plans })
       );
-    } else if (this.state.showing == "preferences") {
+    } else if (showing == "preferences") {
       tabToShow = React.createElement(
         "div",
         null,
@@ -87,7 +88,7 @@ var OverallScheduleDisplay = React.createClass({
           { role: "presentation", className: this.state.showing == "preferences" ? "active" : "" },
           React.createElement(
             "a",
-            { href: "#", onClick: this.handleShowPreferences },
+            { href: "#preferences" },
             "Preferences"
           )
         ),
@@ -96,7 +97,7 @@ var OverallScheduleDisplay = React.createClass({
           { role: "presentation", className: this.state.showing == "schedules" ? "active" : "" },
           React.createElement(
             "a",
-            { href: "#", onClick: this.handleShowSchedules },
+            { href: "#schedules" },
             "Schedules"
           )
         ),
@@ -105,7 +106,7 @@ var OverallScheduleDisplay = React.createClass({
           { role: "presentation", className: this.state.showing == "activity" ? "active" : "" },
           React.createElement(
             "a",
-            { href: "#", onClick: this.handleShowActivitySlots },
+            { href: "#activity" },
             "Activity Programme"
           )
         )

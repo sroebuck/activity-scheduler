@@ -15,7 +15,7 @@ class ChoiceReaderTest extends FunSuite with LazyLogging with DiagrammedAssertio
     val (activityHeadings, individuals) = ChoiceReader.readActivitiesAndIndividuals(inputStream)
     val expectedHeadings = Seq("Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking",
       "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
-      "Adventure Playground", "Another")
+      "Adventure Playground")
     assert(activityHeadings == expectedHeadings)
   }
 
