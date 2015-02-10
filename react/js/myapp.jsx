@@ -21,7 +21,7 @@ let OverallScheduleDisplay = React.createClass({
     $.ajax({
       dataType: "json",
       url: this.props.source,
-      timeout: 60000,
+      timeout: 120000,
       success: result => {
         this.setState({
           plans: result.plans
@@ -374,6 +374,7 @@ var FileForm = React.createClass({
     $.ajax({
       url: this.props.url,
       type: "POST",
+      timeout: 120000,
       data: this.state.data_uri,
       dataType: "json",
       success: function(data) {

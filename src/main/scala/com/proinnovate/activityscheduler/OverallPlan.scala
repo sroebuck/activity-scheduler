@@ -11,7 +11,9 @@ import scala.collection.immutable.Iterable
  * @param unusedActivityPlaces all the activity places that have not been filled yet.
  * @param individualPlans a set of all the plans for all the individuals being scheduled across activities.
  */
-case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualPlans: Set[IndividualPlan]) {
+case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
+                       individualPlans: Set[IndividualPlan],
+                       activityPlaceGroupMembers: Map[ActivityPlace, Seq[String]] = Map.empty) {
 
   override def toString = s"OverallPlan(unusedPlaces=${unusedActivityPlaces.values.sum},$individualPlans)"
 
@@ -48,7 +50,7 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     // In other words, focus on making sure that no one person misses out.
     val averageWeightedByIndMin = minOut * 100 + average
     // Account for the number of missing minimum places
-    val weightedAverageAccountingForGroups = averageWeightedByIndMin + groupMemberMatches
+    val weightedAverageAccountingForGroups = averageWeightedByIndMin + (groupMemberMatches / 10)
     val bestOverallFit = weightedAverageAccountingForGroups - (100 * totalUnderMinimum)
     Fit(
       bestGrowingFit = weightedAverageAccountingForGroups,
@@ -59,14 +61,14 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     )
   }
 
-  lazy val activityPlaceGroupMembers: Map[ActivityPlace, Seq[String]] = {
-    val placeGroupTuple = for {
-      individualPlan <- individualPlans
-      groupId = individualPlan.individual.groupId
-      place <- individualPlan.activityPlaces
-    } yield (place, groupId)
-    placeGroupTuple.groupBy(_._1).map( x => (x._1, x._2.map(_._2).toSeq)).toMap
-  }
+//  lazy val activityPlaceGroupMembers: Seq[(ActivityPlace, Seq[String])] = {
+//    val placeGroupTuple: Set[(ActivityPlace, String)] = for {
+//      individualPlan <- individualPlans
+//      groupId = individualPlan.individual.groupId
+//      place <- individualPlan.activityPlaces
+//    } yield (place, groupId)
+//    placeGroupTuple.groupBy(_._1).map( x => (x._1, x._2.map(_._2).toSeq)).toSeq
+//  }
 
   lazy val notComplete = {
     // The overall plan is not complete if there exists an individual in the plan who has one or more unallocated
@@ -82,7 +84,9 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
     assert(individualPlan.freeSlots.contains(activityPlace.slot), "The individual plan must have a free slot for the activity!")
     val newUnusedActivityPlaces = unusedActivityPlacesAfterRemovingOne(activityPlace)
     val newIndividualPlans = individualPlansAfterAllocatingOne(individual, activityPlace)
-    new OverallPlan(newUnusedActivityPlaces, newIndividualPlans)
+    val newGroupMembers = activityPlaceGroupMembers.updated(activityPlace,
+      activityPlaceGroupMembers.getOrElse(activityPlace, Seq[String]()) :+ individual.groupId)
+    new OverallPlan(newUnusedActivityPlaces, newIndividualPlans, newGroupMembers)
   }
 
   def withRandomAllocatedActivity() = {
@@ -212,10 +216,10 @@ object OverallPlan {
 
   def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
     val nextPlans = for {
-      plan <- plans
+      plan <- plans.par
       nextSteps <- 1 to tryingNo
     } yield plan.withRandomAllocatedActivity()
-    val results = nextPlans.sortBy(- _.fit.bestGrowingFit).take(keepingNo)
+    val results = nextPlans.seq.sortBy(- _.fit.bestGrowingFit).take(keepingNo)
     // logger.debug(s"Iteration fit: ${results.head.fit}")
     results
   }
