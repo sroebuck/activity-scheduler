@@ -18,6 +18,7 @@ var OverallScheduleDisplay = React.createClass({
   getInitialState: function () {
     return {
       showing: getHashQuery() || "preferences",
+      isLoading: false,
       plans: []
     };
   },
@@ -64,6 +65,17 @@ var OverallScheduleDisplay = React.createClass({
         ),
         React.createElement(ScheduleTableElement, { plans: this.state.plans })
       );
+    } else if (showing == "schedules-grouped") {
+      tabToShow = React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "h2",
+          null,
+          "Individual Schedules"
+        ),
+        React.createElement(ScheduleTableGroupedElement, { plans: this.state.plans })
+      );
     } else if (showing == "preferences") {
       tabToShow = React.createElement(
         "div",
@@ -75,6 +87,61 @@ var OverallScheduleDisplay = React.createClass({
         ),
         React.createElement(IndividualPreferencesEntity, { plans: this.state.plans })
       );
+    } else if (showing == "prefs-grouped") {
+      tabToShow = React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "h2",
+          null,
+          "Individual Preferences Grouped"
+        ),
+        React.createElement(IndividualPreferencesSortedByGroupEntity, { plans: this.state.plans })
+      );
+    } else if (showing == "upload") {
+      tabToShow = React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "h2",
+          null,
+          "Upload Preferences"
+        ),
+        React.createElement(FileForm, { url: "/data/preferences.csv", parent: this })
+      );
+    }
+
+    var progressBar = undefined;
+    if (this.state.isLoading) {
+      progressBar = React.createElement(
+        "div",
+        null,
+        React.createElement("br", null),
+        React.createElement(
+          "div",
+          { className: "well well-sm" },
+          React.createElement(
+            "p",
+            null,
+            "Uploading new data"
+          ),
+          React.createElement(
+            "div",
+            { className: "progress" },
+            React.createElement(
+              "div",
+              { className: "progress-bar progress-bar-striped active", role: "progressbar", ariaValuenow: "45", ariaValuemin: "0", ariaValuemax: "100", style: { width: "45%" } },
+              React.createElement(
+                "span",
+                { className: "sr-only" },
+                "45% Complete"
+              )
+            )
+          )
+        )
+      );
+    } else {
+      progressBar = React.createElement("div", null);
     }
 
     return React.createElement(
@@ -94,11 +161,29 @@ var OverallScheduleDisplay = React.createClass({
         ),
         React.createElement(
           "li",
+          { role: "presentation", className: this.state.showing == "prefs-grouped" ? "active" : "" },
+          React.createElement(
+            "a",
+            { href: "#prefs-grouped" },
+            "Preferences Grouped"
+          )
+        ),
+        React.createElement(
+          "li",
           { role: "presentation", className: this.state.showing == "schedules" ? "active" : "" },
           React.createElement(
             "a",
             { href: "#schedules" },
             "Schedules"
+          )
+        ),
+        React.createElement(
+          "li",
+          { role: "presentation", className: this.state.showing == "schedules-grouped" ? "active" : "" },
+          React.createElement(
+            "a",
+            { href: "#schedules-grouped" },
+            "Schedules Grouped"
           )
         ),
         React.createElement(
@@ -109,8 +194,18 @@ var OverallScheduleDisplay = React.createClass({
             { href: "#activity" },
             "Activity Programme"
           )
+        ),
+        React.createElement(
+          "li",
+          { role: "presentation", className: this.state.showing == "upload" ? "active" : "" },
+          React.createElement(
+            "a",
+            { href: "#upload" },
+            "Upload Preferences"
+          )
         )
       ),
+      progressBar,
       tabToShow
     );
   }
@@ -121,6 +216,69 @@ var ScheduleTableElement = React.createClass({
   render: function () {
     var sortedPlans = _.sortBy(this.props.plans, function (plan) {
       return plan.individual.name;
+    });
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "table",
+        { className: "table table-striped table-condensed" },
+        React.createElement(
+          "thead",
+          null,
+          React.createElement(
+            "tr",
+            null,
+            React.createElement(
+              "th",
+              null,
+              "Name"
+            ),
+            React.createElement(
+              "th",
+              { style: textAlignCenter },
+              "Group"
+            ),
+            React.createElement(
+              "th",
+              null,
+              "11am-12noon"
+            ),
+            React.createElement(
+              "th",
+              null,
+              "12noon-1pm"
+            ),
+            React.createElement(
+              "th",
+              null,
+              "2pm-3pm"
+            ),
+            React.createElement(
+              "th",
+              null,
+              "3pm-4pm"
+            )
+          )
+        ),
+        React.createElement(
+          "tbody",
+          null,
+          sortedPlans.map(function (plan) {
+            var i = plan.individual;
+            return React.createElement(IndividualTableLine, { key: i.name, name: i.name, group: i.group, ratings: i.ratings, places: plan.places });
+          })
+        )
+      )
+    );
+  }
+});
+
+var ScheduleTableGroupedElement = React.createClass({
+  displayName: "ScheduleTableGroupedElement",
+  render: function () {
+    var sortedPlans = _.sortBy(this.props.plans, function (plan) {
+      return [plan.individual.group, plan.individual.name];
     });
     return React.createElement(
       "div",
@@ -229,15 +387,12 @@ var ActivityEntity = React.createClass({
     } else if (preference >= 5) {
       theStyle = { color: "red" };
     }
-    return React.createElement(
-      "td",
-      { style: theStyle },
-      display,
-      " ",
+    return (
+      // <td style={theStyle}>{display} <span className="badge">{preference}</span></td>
       React.createElement(
-        "span",
-        { className: "badge" },
-        preference
+        "td",
+        { style: theStyle },
+        display
       )
     );
   }
@@ -316,7 +471,7 @@ var SlotTableEntity = React.createClass({
                 null,
                 group[1].map(function (x) {
                   return x.name.replace(/ /g, " ");
-                }).join(", ")
+                }).sort().join(", ")
               )
             );
           })
@@ -331,6 +486,56 @@ var IndividualPreferencesEntity = React.createClass({
   render: function () {
     var sortedPlans = _.sortBy(this.props.plans, function (plan) {
       return plan.individual.name;
+    });
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "table",
+        { className: "table table-striped table-condensed table-bordered" },
+        React.createElement(
+          "thead",
+          null,
+          React.createElement(
+            "tr",
+            null,
+            React.createElement(
+              "th",
+              null,
+              "Name"
+            ),
+            React.createElement(
+              "th",
+              { style: textAlignCenter },
+              "Group"
+            ),
+            ACTIVITIES.map(function (a) {
+              return React.createElement(
+                "th",
+                { style: { textAlign: "center" }, key: a },
+                a
+              );
+            })
+          )
+        ),
+        React.createElement(
+          "tbody",
+          null,
+          sortedPlans.map(function (plan) {
+            var i = plan.individual;
+            return React.createElement(IndividualPreferencesLine, { key: i.name, name: i.name, group: i.group, ratings: i.ratings, places: plan.places });
+          })
+        )
+      )
+    );
+  }
+});
+
+var IndividualPreferencesSortedByGroupEntity = React.createClass({
+  displayName: "IndividualPreferencesSortedByGroupEntity",
+  render: function () {
+    var sortedPlans = _.sortBy(this.props.plans, function (plan) {
+      return [plan.individual.group, plan.individual.name];
     });
     return React.createElement(
       "div",
@@ -430,5 +635,64 @@ var PreferenceEntity = React.createClass({
   }
 });
 
+
+// this creates a React component that can be used in other components or
+// used directly on the page with React.renderComponent
+var FileForm = React.createClass({
+  displayName: "FileForm",
+
+
+  // since we are starting off without any data, there is no initial value
+  getInitialState: function () {
+    return {
+      data_uri: null };
+  },
+
+  // prevent form from submitting; we are going to capture the file contents
+  handleSubmit: function () {
+    var parent = this.props.parent;
+    $.ajax({
+      url: this.props.url,
+      type: "POST",
+      data: this.state.data_uri,
+      dataType: "json",
+      success: (function (data) {
+        parent.setState({
+          isLoading: false,
+          plans: data.plans
+        });
+      }).bind(this),
+      error: (function (xhr, status, err) {
+        parent.setState({ isLoading: false });
+      }).bind(this)
+    });
+    parent.setState({ isLoading: true });
+    return false;
+  },
+
+  // when a file is passed to the input field, retrieve the contents as a
+  // base64-encoded data URI and save it to the component's state
+  handleFile: function (e) {
+    var self = this;
+    var reader = new FileReader();
+    var file = e.target.files[0];
+
+    reader.onload = function (upload) {
+      self.setState({
+        data_uri: upload.target.result });
+      self.handleSubmit();
+    };
+    reader.readAsDataURL(file);
+  },
+
+  // return the structure to display and bind the onChange, onSubmit handlers
+  render: function () {
+    // since JSX is case sensitive, be sure to use 'encType'
+    return React.createElement(
+      "form",
+      { onSubmit: this.handleSubmit, encType: "multipart/form-data" },
+      React.createElement("input", { type: "file", onChange: this.handleFile })
+    );
+  } });
 
 React.render(React.createElement(OverallScheduleDisplay, { source: "/data/test.json" }), overallScheduleDisplayNode);

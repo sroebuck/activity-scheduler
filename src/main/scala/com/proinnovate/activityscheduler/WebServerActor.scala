@@ -1,10 +1,17 @@
 package com.proinnovate.activityscheduler
 
-import java.io.InputStream
+import java.io.{ByteArrayInputStream, StringReader, InputStream}
+import java.nio.charset.StandardCharsets
 
 import akka.actor.Actor
+import com.google.common.io.BaseEncoding
+import com.typesafe.scalalogging.LazyLogging
 import spray.http.StatusCodes
 import spray.routing.HttpService
+import sun.misc.BASE64Decoder
+
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -21,7 +28,7 @@ class WebServerActor extends Actor with WebService {
 }
 
 // this trait defines our service behavior independently from the service actor
-trait WebService extends HttpService {
+trait WebService extends HttpService with LazyLogging {
 
   import play.api.libs.json._
 
@@ -63,6 +70,20 @@ trait WebService extends HttpService {
       get {
         complete {
           Json.stringify(Json.toJson(plan))
+        }
+      }
+    } ~
+    path("preferences.csv") {
+      post {
+        entity(as[String]) { body =>
+          complete {
+            Future {
+              val decoded = BaseEncoding.base64().decode(body.replace("data:text/csv;base64,",""))
+              val inputStream: InputStream = new ByteArrayInputStream(decoded)
+              val plan = OverallPlan.realPlanFromActivitiesAndIndividualStream(inputStream)
+              Json.stringify(Json.toJson(plan))
+            }
+          }
         }
       }
     } ~
