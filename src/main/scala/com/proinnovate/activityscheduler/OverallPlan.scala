@@ -15,7 +15,8 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
 
   override def toString = s"OverallPlan(unusedPlaces=${unusedActivityPlaces.values.sum},$individualPlans)"
 
-  case class Fit(bestFit: Double,
+  case class Fit(bestOverallFit: Double,
+                 bestGrowingFit: Double,
                  min: Double,
                  average: Double,
                  max: Double)
@@ -30,25 +31,41 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int], individualP
         (minOut, maxOut, sumOut)
     }
     val average = sumOut / individualPlans.size
-    // Calculate the number of minimum allocation places that have not been filled yet.  This should count against
-    // a good score.
+    // Calculate the number of minimum allocation places that have not been filled yet, but don't count this at all
+    // if no places have been taken yet. This should count against a good score. Note that this creates local maxima
+    // and should not be used to grow towards the final goal.
     val totalUnderMinimum = unusedActivityPlaces.map {
       case (place, countRemaining) =>
-        val used = place.activity.max - countRemaining
-        val underMinimum = place.activity.min - used
+        val max = place.activity.max
+        val used = max - countRemaining
+        val underMinimum = if (used == 0) 0 else place.activity.min - used
         underMinimum
+    }.sum
+    val groupMemberMatches = activityPlaceGroupMembers.map {
+      case (place, groups) => groups.size - groups.toSet.size
     }.sum
     // Use the score of the minimum score for any one individual as the measure of the overall plan score.
     // In other words, focus on making sure that no one person misses out.
     val averageWeightedByIndMin = minOut * 100 + average
     // Account for the number of missing minimum places
-    val bestFit = averageWeightedByIndMin - (100 * totalUnderMinimum)
+    val weightedAverageAccountingForGroups = averageWeightedByIndMin + groupMemberMatches
+    val bestOverallFit = weightedAverageAccountingForGroups - (100 * totalUnderMinimum)
     Fit(
-      bestFit = bestFit,
+      bestGrowingFit = weightedAverageAccountingForGroups,
+      bestOverallFit = bestOverallFit,
       min = minOut,
       average = average,
       max = maxOut
     )
+  }
+
+  lazy val activityPlaceGroupMembers: Map[ActivityPlace, Seq[String]] = {
+    val placeGroupTuple = for {
+      individualPlan <- individualPlans
+      groupId = individualPlan.individual.groupId
+      place <- individualPlan.activityPlaces
+    } yield (place, groupId)
+    placeGroupTuple.groupBy(_._1).map( x => (x._1, x._2.map(_._2).toSeq)).toMap
   }
 
   lazy val notComplete = {
@@ -190,7 +207,7 @@ object OverallPlan {
     while(plans(0).notComplete) {
       plans = bestNextRandomIteration(plans, tryingNo, keepingNo)
     }
-    plans.sortBy(- _.fit.bestFit).take(1).head
+    plans.sortBy(- _.fit.bestGrowingFit).take(1).head
   }
 
   def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
@@ -198,7 +215,7 @@ object OverallPlan {
       plan <- plans
       nextSteps <- 1 to tryingNo
     } yield plan.withRandomAllocatedActivity()
-    val results = nextPlans.sortBy(- _.fit.bestFit).take(keepingNo)
+    val results = nextPlans.sortBy(- _.fit.bestGrowingFit).take(keepingNo)
     // logger.debug(s"Iteration fit: ${results.head.fit}")
     results
   }
@@ -207,7 +224,7 @@ object OverallPlan {
     (0 to sampleSize).foldLeft(start) {
       (best: OverallPlan, sample: Int) =>
         val plan = f()
-        if (plan.fit.bestFit > best.fit.bestFit) plan else best
+        if (plan.fit.bestGrowingFit > best.fit.bestGrowingFit) plan else best
     }
   }
 
@@ -225,11 +242,11 @@ object OverallPlan {
       val slot2 = Slot("12noon-1pm", new DateTime(2015, 2, 14, 12, 0), new DateTime(2015, 2, 14, 13, 0))
       val slot3 = Slot("2pm-3pm", new DateTime(2015, 2, 14, 14, 0), new DateTime(2015, 2, 14, 15, 0))
       val slot4 = Slot("3pm-4pm", new DateTime(2015, 2, 14, 15, 0), new DateTime(2015, 2, 14, 16, 0))
-      val mappings = Map("Archery" -> (2, 6, Some("A")), "Trail Biking" -> (2,6, Some("A")),
-          "Ropes Course" -> (2,7, Some("A")), "High Ropes" -> (2,6, Some("A")), 	"Adventure Golf" -> (2,6,None),
-          "Baking" -> (2,12,None), "Crafts" -> (2,12,None), "Fire Starter" -> (2,12,None),
-          "Video & Photography" -> (2,15,None),	"Mental Mayhem" -> (2,12,None), "Indoor Games" -> (5,15,None),
-          "Games Hall" -> (5,15,None), "Football" -> (4,14,None),	"Adventure Playground" -> (6,24,None),
+      val mappings = Map("Archery" -> (3, 6, Some("A")), "Trail Biking" -> (3,6, Some("A")),
+          "Ropes Course" -> (4,7, Some("A")), "High Ropes" -> (4,6, Some("A")), 	"Adventure Golf" -> (3,6,None),
+          "Baking" -> (8,12,None), "Crafts" -> (6,12,None), "Fire Starter" -> (6,12,None),
+          "Video & Photography" -> (8,15,None),	"Mental Mayhem" -> (8,12,None), "Indoor Games" -> (8,15,None),
+          "Games Hall" -> (10,15,None), "Football" -> (8,14,None),	"Adventure Playground" -> (8,24,None),
           "Another" -> (2,8,None))
       val allActivityNames = mappings.map{ case (name, _) => name }.toSet
       val slot1ActivityNames = allActivityNames -- Set("Fire Starter", "Video & Photography", "Indoor Games", "Another")
