@@ -61,15 +61,6 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
     )
   }
 
-//  lazy val activityPlaceGroupMembers: Seq[(ActivityPlace, Seq[String])] = {
-//    val placeGroupTuple: Set[(ActivityPlace, String)] = for {
-//      individualPlan <- individualPlans
-//      groupId = individualPlan.individual.groupId
-//      place <- individualPlan.activityPlaces
-//    } yield (place, groupId)
-//    placeGroupTuple.groupBy(_._1).map( x => (x._1, x._2.map(_._2).toSeq)).toSeq
-//  }
-
   lazy val notComplete = {
     // The overall plan is not complete if there exists an individual in the plan who has one or more unallocated
     // slots.
@@ -82,11 +73,31 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
     assert(individualPlanOpt.isDefined, "The individual must exist!")
     val individualPlan = individualPlanOpt.get
     assert(individualPlan.freeSlots.contains(activityPlace.slot), "The individual plan must have a free slot for the activity!")
-    val newUnusedActivityPlaces = unusedActivityPlacesAfterRemovingOne(activityPlace)
-    val newIndividualPlans = individualPlansAfterAllocatingOne(individual, activityPlace)
+    val newUnusedActivityPlaces = unusedActivityPlacesAfterRemovingOne(unusedActivityPlaces, activityPlace)
+    val newIndividualPlans = individualPlansAfterAllocatingOne(individualPlans, individual, activityPlace)
     val newGroupMembers = activityPlaceGroupMembers.updated(activityPlace,
       activityPlaceGroupMembers.getOrElse(activityPlace, Seq[String]()) :+ individual.groupId)
     new OverallPlan(newUnusedActivityPlaces, newIndividualPlans, newGroupMembers)
+  }
+
+  def withReallocation(individual: Individual,
+                       currentActivityPlace: ActivityPlace, newActivityPlace: ActivityPlace): OverallPlan = {
+    assert(unusedActivityPlaces.contains(newActivityPlace), "Can only allocate unused activity places!")
+    val individualPlanOpt = individualPlans.find(_.individual == individual)
+    assert(individualPlanOpt.isDefined, "The individual must exist!")
+    val individualPlan = individualPlanOpt.get
+    assert(individualPlan.activityPlaces.contains(currentActivityPlace),
+      "The individual must have the activity place their are reallocating from")
+    assert(currentActivityPlace.slot == newActivityPlace.slot || individualPlan.freeSlots.contains(newActivityPlace.slot),
+      "There must have a free slot for the activity!")
+    val newUnusedActivityPlaces = unusedActivityPlacesAfterRemovingOne(unusedActivityPlaces, newActivityPlace)
+    val balancedUnusedActivityPlaces = unusedActivityPlacesAfterReturningOne(newUnusedActivityPlaces, currentActivityPlace)
+    val newIndividualPlans = individualPlansAfterDeallocatingOne(individualPlans, individual, currentActivityPlace)
+    val balancedIndividualPlans = individualPlansAfterAllocatingOne(newIndividualPlans, individual, newActivityPlace)
+    val newGroupMembers = activityPlaceGroupMembers.updated(newActivityPlace,
+      activityPlaceGroupMembers.getOrElse(newActivityPlace, Seq[String]()) :+ individual.groupId).updated(
+      currentActivityPlace, activityPlaceGroupMembers.getOrElse(currentActivityPlace, Seq[String]()) diff Seq(individual.groupId))
+    new OverallPlan(balancedUnusedActivityPlaces, balancedIndividualPlans, newGroupMembers)
   }
 
   def withRandomAllocatedActivity() = {
@@ -107,6 +118,12 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
     val activityPlace = nonGroupDuplicateActivities(selection)
     this.withAllocation(activityPlace, individual)
   }
+
+//  def withRandomReallocation() = {
+//    val (individual,slot) = randomUnallocatedIndividualSlot
+//    val freeActivitiesPreFiltered = unusedActivityPlacesForSlot(slot).toSeq
+//  }
+
 
   lazy val individualPlansReport = {
     val nameMap = individualPlans.map( p => p.individual.uniqueName -> p).toMap
@@ -146,9 +163,11 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
     unusedActivityPlaces.keySet.filter(_.slot == slot)
   }
 
-  private def unusedActivityPlacesAfterRemovingOne(activityPlace: ActivityPlace): Map[ActivityPlace,Int] = {
+  private def unusedActivityPlacesAfterRemovingOne(
+      unusedActivityPlaces: Map[ActivityPlace, Int],
+      activityPlace: ActivityPlace): Map[ActivityPlace,Int] = {
     val activityPlaceCountOpt = unusedActivityPlaces.get(activityPlace)
-    assert(activityPlaceCountOpt.isDefined, "Cannot allocated a place that does not exists!")
+    assert(activityPlaceCountOpt.isDefined, "Cannot allocated a place that does not exist!")
     val activityPlaceCount = activityPlaceCountOpt.get
     if (activityPlaceCount > 1) {
       unusedActivityPlaces.map {
@@ -162,12 +181,38 @@ case class OverallPlan(unusedActivityPlaces: Map[ActivityPlace,Int],
     }
   }
 
-  private def individualPlansAfterAllocatingOne(individual: Individual, activityPlace: ActivityPlace): Set[IndividualPlan] = {
+  private def unusedActivityPlacesAfterReturningOne(
+       unusedActivityPlaces: Map[ActivityPlace, Int],
+       activityPlace: ActivityPlace): Map[ActivityPlace,Int] = {
+    val activityPlaceCountOpt = unusedActivityPlaces.get(activityPlace)
+    val activityPlaceCount = activityPlaceCountOpt.getOrElse(0)
+    if (activityPlaceCount > 0) {
+      unusedActivityPlaces.map {
+        case (`activityPlace`, count) => (activityPlace, count + 1)
+        case x => x
+      }
+    } else {
+      unusedActivityPlaces + (activityPlace -> 1)
+    }
+  }
+
+  private def individualPlansAfterAllocatingOne(individualPlans: Set[IndividualPlan], individual: Individual,
+                                                activityPlace: ActivityPlace): Set[IndividualPlan] = {
     val individualPlanOpt = individualPlans.find(_.individual == individual)
     assert(individualPlanOpt.isDefined, "There must be a plan for the individual to start with!")
     val individualPlan = individualPlanOpt.get
     val otherPlans = individualPlans - individualPlan
     val newIndividualPlan = individualPlan.withPlace(activityPlace)
+    otherPlans + newIndividualPlan
+  }
+
+  private def individualPlansAfterDeallocatingOne(individualPlans: Set[IndividualPlan], individual: Individual,
+                                                  activityPlace: ActivityPlace): Set[IndividualPlan] = {
+    val individualPlanOpt = individualPlans.find(_.individual == individual)
+    assert(individualPlanOpt.isDefined, "There must be a plan for the individual to start with!")
+    val individualPlan = individualPlanOpt.get
+    val otherPlans = individualPlans - individualPlan
+    val newIndividualPlan = individualPlan.withoutPlace(activityPlace)
     otherPlans + newIndividualPlan
   }
 
@@ -211,13 +256,13 @@ object OverallPlan {
     while(plans(0).notComplete) {
       plans = bestNextRandomIteration(plans, tryingNo, keepingNo)
     }
-    plans.sortBy(- _.fit.bestGrowingFit).take(1).head
+    plans.sortBy(- _.fit.bestOverallFit).take(1).head
   }
 
   def bestNextRandomIteration(plans: Seq[OverallPlan], tryingNo: Int, keepingNo: Int): Seq[OverallPlan] = {
     val nextPlans = for {
       plan <- plans.par
-      nextSteps <- 1 to tryingNo
+      nextSteps <- (1 to tryingNo).par
     } yield plan.withRandomAllocatedActivity()
     val results = nextPlans.seq.sortBy(- _.fit.bestGrowingFit).take(keepingNo)
     // logger.debug(s"Iteration fit: ${results.head.fit}")
@@ -248,12 +293,12 @@ object OverallPlan {
       val slot4 = Slot("3pm-4pm", new DateTime(2015, 2, 14, 15, 0), new DateTime(2015, 2, 14, 16, 0))
       val mappings = Map("Archery" -> (3, 6, Some("A")), "Trail Biking" -> (3,6, Some("A")),
           "Ropes Course" -> (4,7, Some("A")), "High Ropes" -> (4,6, Some("A")), 	"Adventure Golf" -> (3,6,None),
-          "Baking" -> (8,12,None), "Crafts" -> (6,12,None), "Fire Starter" -> (6,12,None),
-          "Video & Photography" -> (8,15,None),	"Mental Mayhem" -> (8,12,None), "Indoor Games" -> (8,15,None),
+          "Baking" -> (8,12,None), "Crafts" -> (6,12,None), "Grylls Skylls" -> (6,12,None),
+          "Video workshop" -> (8,15,None),	"Mental Mayhem" -> (8,12,None), "Indoor Games" -> (8,15,None),
           "Games Hall" -> (10,15,None), "Football" -> (8,14,None),	"Adventure Playground" -> (8,24,None),
           "Another" -> (2,8,None))
       val allActivityNames = mappings.map{ case (name, _) => name }.toSet
-      val slot1ActivityNames = allActivityNames -- Set("Fire Starter", "Video & Photography", "Indoor Games", "Another")
+      val slot1ActivityNames = allActivityNames -- Set("Grylls Skylls", "Video workshop", "Indoor Games", "Another")
       val slot1Places = slot1ActivityNames.map(name =>
         ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot1))
       val slot2ActivityNames = allActivityNames -- Set("Crafts", "Mental Mayhem", "Another")
@@ -262,7 +307,7 @@ object OverallPlan {
       val slot3ActivityNames = allActivityNames -- Set("Adventure Golf", "Mental Mayhem", "Another")
       val slot3Places = slot3ActivityNames.map(name =>
         ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot3))
-      val slot4ActivityNames = allActivityNames -- Set("Baking", "Fire Starter", "Video & Photography", "Indoor Games", "Another")
+      val slot4ActivityNames = allActivityNames -- Set("Baking", "Grylls Skylls", "Video workshop", "Indoor Games", "Another")
       val slot4Places = slot4ActivityNames.map(name =>
         ActivityPlace(Activity(name, mappings(name)._1, mappings(name)._2, mappings(name)._3), slot4))
       (slot1Places ++ slot2Places ++ slot3Places ++ slot4Places).toSet
@@ -285,7 +330,7 @@ object OverallPlan {
       OverallPlan(unusedActivityMap, realIndividualPlans)
     }
 
-    OverallPlan.randomBestOf(realDataStartPlan, 100,20)
+    OverallPlan.randomBestOf(realDataStartPlan, 100,40)
   }
 
 }

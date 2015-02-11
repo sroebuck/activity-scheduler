@@ -6,7 +6,7 @@
 const textAlignCenter = { textAlign: "center" };
 
 const ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts",
-    "Fire Starter","Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
+    "Grylls Skylls","Video workshop", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
     "Adventure Playground"];
 
 let getHashQuery = () => location.hash.replace(/^#/, '');

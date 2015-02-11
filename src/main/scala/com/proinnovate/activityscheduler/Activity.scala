@@ -12,7 +12,7 @@ case class Activity(name: String, min: Int = 2, max: Int = 6, oneOnlyGroupOpt: O
 object Activity {
 
   val universalNameSet = Set("Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking",
-    "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
+    "Crafts", "Grylls Skylls", "Video workshop", "Mental Mayhem", "Indoor Games", "Games Hall", "Football",
     "Adventure Playground", "Another")
 
 }

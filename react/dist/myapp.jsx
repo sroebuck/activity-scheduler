@@ -7,7 +7,7 @@
 
 var textAlignCenter = { textAlign: "center" };
 
-var ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts", "Fire Starter", "Video & Photography", "Mental Mayhem", "Indoor Games", "Games Hall", "Football", "Adventure Playground"];
+var ACTIVITIES = ["Archery", "Trail Biking", "Ropes Course", "High Ropes", "Adventure Golf", "Baking", "Crafts", "Grylls Skylls", "Video workshop", "Mental Mayhem", "Indoor Games", "Games Hall", "Football", "Adventure Playground"];
 
 var getHashQuery = function () {
   return location.hash.replace(/^#/, "");

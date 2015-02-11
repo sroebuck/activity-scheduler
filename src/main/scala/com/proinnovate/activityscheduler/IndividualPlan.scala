@@ -30,6 +30,8 @@ case class IndividualPlan(individual: Individual, activityPlaces: Set[ActivityPl
 
   def withPlace(activityPlace: ActivityPlace) = copy(activityPlaces = activityPlaces + activityPlace)
 
+  def withoutPlace(activityPlace: ActivityPlace) = copy(activityPlaces = activityPlaces - activityPlace)
+
   def hasFreeSlot(slot: Slot) = freeSlots.contains(slot)
 
 }
